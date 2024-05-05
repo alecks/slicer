@@ -1,7 +1,6 @@
 syntax = "proto3";
 
 package slicer;
-
 option go_package = "github.com/alecks/slicer/proto";
 
 service MetaService {
@@ -13,3 +12,4 @@ message InfoRequest {}
 message InfoResponse {
   string version = 1;
 }
+
