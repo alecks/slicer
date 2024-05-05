@@ -2,11 +2,12 @@ package main
 
 import (
 	"log/slog"
-
-	"github.com/labstack/echo/v4"
-	"github.com/labstack/echo/v4/middleware"
-	slogecho "github.com/samber/slog-echo"
+	"os"
+	"os/signal"
+	"syscall"
 )
+
+const slicerVersion = "0.01"
 
 func main() {
 	config, err := readConfig()
@@ -15,10 +16,8 @@ func main() {
 	}
 	slog.SetLogLoggerLevel(parseLogLevel(config.LogLevel))
 
-	e := echo.New()
+	sigint := make(chan os.Signal, 1)
+	signal.Notify(sigint, syscall.SIGINT, syscall.SIGTERM)
 
-	e.Use(slogecho.New(slog.Default()))
-	e.Use(middleware.Recover())
-
-	e.Logger.Fatal(e.Start(config.Server.Address))
+	serve(config.Server.Address, sigint)
 }
