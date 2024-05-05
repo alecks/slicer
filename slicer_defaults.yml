@@ -1,3 +1,5 @@
 log_level: info
 server:
   address: ":2442"
+auth:
+  secret_location: "./SECRET"
