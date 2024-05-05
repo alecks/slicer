@@ -20,5 +20,6 @@
 # Go workspace file
 go.work
 
-# Slicer config file
+# Slicer files
 slicer.yml
+SECRET
