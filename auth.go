@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"crypto/rand"
 	"fmt"
 	"log/slog"
 	"time"
@@ -26,19 +25,9 @@ var authExcludes = map[string][]string{
 	pb.MetaService_ServiceDesc.ServiceName: {"Info"},
 }
 
-type metaService struct {
-	pb.UnimplementedMetaServiceServer
-}
-
 type userClaims struct {
 	jwt.RegisteredClaims
 	UserID string `json:"user_id"`
-}
-
-func (s *metaService) Info(ctx context.Context, in *pb.InfoRequest) (*pb.InfoResponse, error) {
-	return &pb.InfoResponse{
-		Version: slicerVersion,
-	}, nil
 }
 
 type authService struct {
@@ -100,15 +89,4 @@ func requireAuth(ctx context.Context, callMeta interceptors.CallMeta) bool {
 		}
 	}
 	return auth
-}
-
-func generateRandomBytes(n int) ([]byte, error) {
-	b := make([]byte, n)
-	_, err := rand.Read(b)
-	// Note that err == nil only if we read len(b) bytes.
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
 }
