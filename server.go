@@ -1,25 +1,16 @@
 package main
 
 import (
-	"context"
 	"log/slog"
 	"net"
 	"os"
 
 	pb "github.com/alecks/slicer/proto"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
-
-type metaService struct {
-	pb.UnimplementedMetaServiceServer
-}
-
-func (s *metaService) Info(ctx context.Context, in *pb.InfoRequest) (*pb.InfoResponse, error) {
-	return &pb.InfoResponse{
-		Version: slicerVersion,
-	}, nil
-}
 
 func serve[T any](addr string, stop chan T) {
 	listener, err := net.Listen("tcp", addr)
@@ -45,9 +36,12 @@ func serve[T any](addr string, stop chan T) {
 }
 
 func newServer() *grpc.Server {
-	s := grpc.NewServer()
+	s := grpc.NewServer(grpc.ChainUnaryInterceptor(
+		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authInterceptor), selector.MatchFunc(requireAuth)),
+	))
 
 	pb.RegisterMetaServiceServer(s, &metaService{})
+	pb.RegisterAuthServiceServer(s, &authService{})
 	reflection.Register(s)
 
 	return s
