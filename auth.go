@@ -2,7 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log/slog"
 	"time"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/uptrace/bun"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -19,13 +19,20 @@ var authExcludes = map[string][]string{
 	pb.MetaService_ServiceDesc.ServiceName: {"Info"},
 }
 
+var jwtValidMethods = []string{"HS256"}
+
 type userClaims struct {
 	jwt.RegisteredClaims
 	UserID string `json:"user_id"`
 }
 
+type serviceContext struct {
+	db *bun.DB
+}
+
 type authService struct {
 	pb.UnimplementedAuthServiceServer
+	c *serviceContext
 }
 
 func (s *authService) Authenticate(ctx context.Context, in *pb.AuthRequest) (*pb.AuthResponse, error) {
@@ -58,21 +65,13 @@ func authInterceptor(ctx context.Context) (context.Context, error) {
 	}
 
 	claims := userClaims{}
-	_, err = jwt.ParseWithClaims(rawToken, &claims, checkToken)
+	_, err = jwt.ParseWithClaims(rawToken, &claims, getJwtSecret, jwt.WithValidMethods(jwtValidMethods))
 	if err != nil {
 		slog.Debug("failed to parse token", "err", err)
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
 
 	return context.WithValue(ctx, ctxClaims, claims), nil
-}
-
-func checkToken(token *jwt.Token) (interface{}, error) {
-	method := token.Method.Alg()
-	if method != "HS256" {
-		return nil, fmt.Errorf("unexpected token signing method %s", method)
-	}
-	return jwtSecret, nil
 }
 
 func requireAuth(ctx context.Context, callMeta interceptors.CallMeta) bool {
@@ -83,4 +82,8 @@ func requireAuth(ctx context.Context, callMeta interceptors.CallMeta) bool {
 		}
 	}
 	return auth
+}
+
+func getJwtSecret(t *jwt.Token) (any, error) {
+	return jwtSecret, nil
 }
