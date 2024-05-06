@@ -14,12 +14,6 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type ctxKeys int
-
-const (
-	ctxClaims ctxKeys = iota
-)
-
 var authExcludes = map[string][]string{
 	pb.AuthService_ServiceDesc.ServiceName: {"Authenticate"},
 	pb.MetaService_ServiceDesc.ServiceName: {"Info"},

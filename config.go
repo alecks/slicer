@@ -14,6 +14,13 @@ const (
 	configDefaultsPath = "./slicer_defaults.yml"
 )
 
+type ctxKeys int
+
+const (
+	ctxClaims ctxKeys = iota
+	ctxDbRetries
+)
+
 type slicerConfig struct {
 	Server struct {
 		Address string `yaml:"address,omitempty"`
@@ -22,6 +29,7 @@ type slicerConfig struct {
 		SecretLocation string `yaml:"secret_location,omitempty"`
 	}
 	LogLevel string `yaml:"log_level,omitempty"`
+	Db       dbConfig
 }
 
 var jwtSecret []byte
