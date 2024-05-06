@@ -3,3 +3,7 @@ server:
   address: ":2442"
 auth:
   secret_location: "./SECRET"
+db:
+  ping_timeout: 5000
+  retries: 2
+  dsn: "postgres://postgres:@localhost:5432/slicer?sslmode=disable"
