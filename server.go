@@ -7,6 +7,7 @@ import (
 
 	pb "github.com/alecks/slicer/proto"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/auth"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/selector"
 	"github.com/uptrace/bun"
 	"google.golang.org/grpc"
@@ -34,11 +35,13 @@ func serve[T any](conf *slicerConfig, db *bun.DB, stop chan T) {
 	<-stop
 	slog.Info("stopping gracefully")
 	s.GracefulStop()
+	db.Close()
 }
 
 func newServer(conf *slicerConfig, db *bun.DB) *grpc.Server {
 	s := grpc.NewServer(grpc.ChainUnaryInterceptor(
 		selector.UnaryServerInterceptor(auth.UnaryServerInterceptor(authInterceptor), selector.MatchFunc(requireAuth)),
+		recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(recoveryHandler)),
 	))
 
 	c := &serviceContext{db: db}
